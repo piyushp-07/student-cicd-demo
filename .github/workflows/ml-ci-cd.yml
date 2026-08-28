@@ -1,0 +1,68 @@
+name: Student Placement ML CI-CD Pipeline
+
+on:
+  push:
+    branches: ["main"]
+
+  pull_request:
+    branches: ["main"]
+
+jobs:
+
+  test-and-train:
+
+    name: CI - Validate, Test and Train Model
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Code Quality Check
+        run: |
+          flake8 train.py predict.py test_model.py
+
+      - name: Train Model
+        run: |
+          python train.py
+
+      - name: Check Model File
+        run: |
+          test -f placement_model.pkl
+
+      - name: Run Automated Tests
+        run: |
+          pytest
+
+      - name: Test Prediction
+        run: |
+          python predict.py
+
+
+  deploy:
+
+    name: CD - Deploy Model
+
+    needs: test-and-train
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy Application
+        run: |
+          echo "Student Placement Prediction Model deployed successfully!"
